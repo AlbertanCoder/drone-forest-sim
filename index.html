@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Find the fire: drone training simulation</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#16241d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+<body>
+<div id="view" aria-label="3D view"></div>
+
+<div id="hud" hidden>
+  <div class="hud-top">
+    <div class="readout keep"><span>Battery</span><b id="hud-batt">-</b></div>
+    <div class="readout"><span>Flight time</span><b id="hud-time">-</b></div>
+    <div class="readout keep" title="The real limit: 122 m (400 ft) above the ground, CAR 901.25. The simulation lets you go higher."><span>Height <i class="lim">limit 122 m</i></span><b id="hud-alt">-</b></div>
+    <div class="readout"><span>Speed</span><b id="hud-speed">-</b></div>
+    <div class="readout"><span>Heading</span><b id="hud-heading">-</b></div>
+    <div class="readout"><span>Throttle</span><b id="hud-thr">-</b></div>
+    <div class="readout keep" title="Distance from you at the take-off spot (line of sight)"><span>From you</span><b id="hud-dist">-</b></div>
+    <div class="readout"><span>Packs</span><b id="hud-packs">-</b></div>
+    <div class="readout keep" title="The radio signal from your controller: 4 bars at 20 dB of margin or more, LOST when the link drops (the radio model's estimate)"><span>Signal</span><b id="hud-sig">-</b></div>
+  </div>
+  <div id="fpv-noise" aria-hidden="true"></div>
+    <div id="osd">
+    <div class="osd-tl"><b id="osd-volts"></b><span id="osd-mah"></span><span id="osd-rssi"></span><span id="osd-lq" hidden></span></div>
+    <div class="osd-tc"><span id="osd-time"></span><span id="osd-alt"></span><span id="osd-mode"></span></div>
+    <div class="osd-warn" id="osd-warn"></div>
+  </div>
+  <p id="goal" role="status"></p>
+  <div id="tutorial" hidden>
+    <p><span id="tut-step"></span> <span id="tut-text"></span></p>
+    <button type="button" id="tut-skip">Skip tutorial</button>
+  </div>
+  <aside id="legend" hidden aria-labelledby="legend-title">
+    <button type="button" id="legend-close" class="close" aria-label="Hide the controls">&times;</button>
+    <h2 id="legend-title">Controls</h2>
+    <p class="legend-device"></p>
+    <ul class="legend-rows"></ul>
+    <button type="button" id="legend-tutorial">Start the tutorial</button>
+  </aside>
+  <div class="thermal-box">
+    <canvas id="thermal" width="32" height="24" aria-label="Thermal camera, 32 by 24 pixels"></canvas>
+    <canvas id="thermal-marks" width="192" height="144" aria-hidden="true"></canvas>
+    <div class="thermal-cap"><span id="thermal-label">Thermal camera (32 x 24)</span> <span id="thermal-hot"></span></div>
+    <div class="thermal-scale" id="thermal-scale" aria-hidden="true"><span id="scale-lo"></span><i></i><span id="scale-hi"></span></div>
+  </div>
+  <div class="hud-buttons">
+    <button type="button" id="btn-pause" aria-label="Pause">Pause</button>
+    <button type="button" id="btn-report" class="primary">Report hot spot</button>
+    <button type="button" id="btn-camera">Camera: chase</button>
+    <button type="button" id="btn-field" aria-pressed="false" aria-controls="field-term">Field mode: off</button>
+    <button type="button" id="btn-arm">Arm</button>
+    <button type="button" id="btn-swap">Swap battery</button>
+    <button type="button" id="btn-skip" hidden>Skip ahead</button>
+    <button type="button" id="btn-levels">Levels</button>
+    <button type="button" id="btn-hold" aria-pressed="true">Height hold: on (easy)</button>
+    <button type="button" id="btn-sound" aria-pressed="true">Sound: on</button>
+    <button type="button" id="btn-legend" aria-controls="legend">? Controls</button>
+    <button type="button" id="btn-howreal-2">How real is this?</button>
+    <button type="button" id="btn-radio-2">Set up radio</button>
+  </div>
+  <p id="hud-msg" role="status" aria-live="polite"></p>
+    <div class="minimap" id="minimap-box" role="img" aria-label="Map, north up: you and the truck, the drone, the track flown, the lookout's sector and your reports. Tap to enlarge."><canvas id="minimap" width="150" height="150"></canvas></div>
+    <div id="field-bezel" hidden aria-hidden="true"><span id="field-bezel-label">Monitor: the analogue 5.8 GHz picture, as on your M5F</span></div>
+  <p id="field-rules" hidden>The guide: &ldquo;If you fly by a screen, you need a visual observer; until then, fly looking at the drone.&rdquo; Basic operations: someone must keep the drone in sight.</p>
+  <section id="field-term" hidden aria-labelledby="ft-title">
+    <div class="ft-bar">
+      <span id="ft-title">Laptop: SSH to pi@drone.local, over the phone hotspot</span>
+      <button type="button" id="btn-field-view">View: monitor</button>
+      <button type="button" id="ft-fold" aria-expanded="true">Hide</button>
+    </div>
+    <div class="ft-tabs" role="tablist">
+      <button type="button" role="tab" id="ft-tab-run" aria-selected="true" aria-controls="ft-run">tail -f run.txt</button>
+      <button type="button" role="tab" id="ft-tab-log" aria-selected="false" aria-controls="ft-log">tail -f flight-log.jsonl</button>
+    </div>
+    <p class="ft-note" id="ft-note-run">Step 8's own window: exactly what the real payload prints.</p>
+    <p class="ft-note" id="ft-note-log" hidden>Extra: a real command, but not in the guide's steps. One line per hot spot, as the payload stores it.</p>
+    <pre id="ft-run" class="ft-out" role="tabpanel" aria-labelledby="ft-tab-run"></pre>
+    <pre id="ft-log" class="ft-out" role="tabpanel" aria-labelledby="ft-tab-log" hidden></pre>
+  </section>
+  <div id="touch" hidden>
+    <div class="stick" id="stick-left" aria-label="Left stick: throttle and yaw"><i></i></div>
+    <div class="stick" id="stick-right" aria-label="Right stick: pitch and roll"><i></i></div>
+  </div>
+</div>
+
+<section id="start" aria-labelledby="start-title">
+  <div class="start-card">
+    <p class="kicker">Training simulation &middot; made-up forest, northern Alberta</p>
+    <h1 id="start-title">Find the fire</h1>
+    <p class="easy-banner" id="easy-banner" hidden>Easy radio is on. Real radios lose signal through trees: turn it off in Settings for the real challenge.</p>
+    <p>Fly the drone over a forest where a fire has started. Its thermal camera finds hot spots with the same code as the real payload. Your job is only to find the fire and press <b>Report hot spot</b>. Responders fly in and drop water where you reported.</p>
+    <p class="rules" id="start-rules"></p>
+    <details class="menu-help" id="menu-help"><summary>How to play</summary>
+    <p id="start-search">Each game the fire starts somewhere new in a 10 km forest, at a random stage, from a smouldering spot to a big plume. A lookout gives you a rough direction. You have two battery packs: swap them by hand at the take-off spot.</p>
+    <ol class="howto">
+      <li>Arm and take off.</li>
+      <li>Fly over the forest and watch the thermal picture (top right). The fire shows as a white hot spot with a circle round it.</li>
+      <li>Over the fire, turn the nose to north, hover level, then press <b>Report hot spot</b>. The real payload maps hot spots as if the drone faced north and looked straight down, so a report made facing another way, or in fast flight, lands in the wrong place.</li>
+      <li>A helicopter drops water where you reported. A careless report misses.</li>
+    </ol>
+    <details class="keys"><summary>Controls</summary>
+      <p><b>Keyboard</b>: Space arm / disarm &middot; W / S climb / sink (or the throttle, with height hold off) &middot; arrow keys or I J K L tilt &middot; A / D or Q / E turn &middot; R report &middot; C camera &middot; G height hold on / off &middot; M angle / acro &middot; H or ? the controls panel</p>
+      <p><b>Gamepad</b>: left stick up / down climb / sink and sideways turn, right stick tilt, Start arms.</p>
+      <p><b>Phone</b>: the left thumb stick is up / down (it stays where you leave it; the middle holds the height) and turn; the right one tilts. The Arm button arms.</p>
+      <p><b>Your RadioMaster Pocket</b>: plug it in by USB, choose USB Joystick (HID) on the radio, then press Set up radio.</p>
+    </details>
+    </details>
+    <div class="start-buttons">
+      <button type="button" id="btn-start" class="primary">Play</button>
+      <button type="button" id="btn-demo">Watch a demo</button>
+      <button type="button" id="btn-settings">Settings</button>
+      <button type="button" id="btn-controls">Controls</button>
+      <button type="button" id="btn-howreal">How real is this?</button>
+      <button type="button" id="btn-radio">Set up radio</button>
+    </div>
+    <p class="muted" id="start-status">Loading the drone&hellip;</p>
+  </div>
+</section>
+
+<section id="settings" hidden aria-labelledby="settings-title">
+  <div class="start-card">
+    <button type="button" id="settings-close" class="close" aria-label="Close">&times;</button>
+    <h2 id="settings-title">Settings</h2>
+    <fieldset class="settings" id="radio-choice">
+      <legend>Realism</legend>
+      <div class="start-buttons" role="group" aria-label="Realism preset">
+        <button type="button" id="rz-real" aria-pressed="false">Real</button>
+        <button type="button" id="rz-training" aria-pressed="false">Training</button>
+        <button type="button" id="rz-easy" aria-pressed="false">Easy</button>
+      </div>
+      <p class="muted" id="rz-now"></p>
+      <details class="rz-custom"><summary>Custom: each switch</summary>
+        <label class="check"><input type="checkbox" id="set-easyradio"> Easy radio: trees and hills do not block the signal (a game assist, not real)</label>
+        <label>Video transmitter power <select id="rz-vtx"><option value="25">25 mW (yours)</option><option value="200">200 mW</option><option value="500">500 mW</option><option value="800">800 mW</option></select></label>
+        <label>Analog video breakup <select id="rz-breakup"><option value="1">Full (real)</option><option value="0.5">Half</option><option value="0">Off (clean picture)</option></select></label>
+        <label>Fade margin <select id="rz-fade"><option value="10">10 dB (real)</option><option value="0">None</option></select></label>
+        <label>Wind strength <input type="range" id="rz-wind" min="0" max="100" step="10"> <output id="rz-wind-out"></output></label>
+        <label class="check"><input type="checkbox" id="rz-sag"> Battery voltage sags under load</label>
+        <label class="check"><input type="checkbox" id="rz-rules"> Rules enforced: flying while the helicopter works ends the mission</label>
+        <label class="check"><input type="checkbox" id="rz-failures"> Failures: the failsafe drops the drone on a lost link; crashes damage it</label>
+      </details>
+      <p class="muted">A real 2.4 GHz radio loses signal through trees, most when the drone is low and far away. The bars warn first: climb, or land and drive closer.</p>
+    </fieldset>
+    <fieldset class="settings">
+      <legend>Flying help</legend>
+      <label for="set-tilt">Flying camera tilt <output id="set-tilt-out"></output></label>
+      <input type="range" id="set-tilt" min="0" max="40" step="1">
+      <button type="button" id="set-hold" aria-pressed="true">Height hold: on (easy)</button>
+      <p class="muted" id="set-hold-note">The middle of the throttle holds the height. The real drone has no height hold: switch it off to fly it for real.</p>
+      <label for="set-sens">Stick sensitivity <output id="set-sens-out"></output></label>
+      <input type="range" id="set-sens" min="30" max="100" step="5">
+      <label for="set-expo">Expo: softer around the middle <output id="set-expo-out"></output></label>
+      <input type="range" id="set-expo" min="0" max="80" step="5">
+      <label class="check"><input type="checkbox" id="set-practice"> Practice: unlimited packs, swap wherever you land (not real)</label>
+    </fieldset>
+    <fieldset class="settings">
+      <legend>Sound</legend>
+      <label class="check"><input type="checkbox" id="set-sound" checked> Sound on</label>
+      <label for="set-volume">Volume <output id="set-volume-out"></output></label>
+      <input type="range" id="set-volume" min="0" max="100" step="5">
+      <p class="muted">The motors, the wind, the fire and the radio's warnings. Nothing plays until you press Play.</p>
+    </fieldset>
+    <fieldset class="settings" id="world-choice">
+      <legend>Weather and time of day</legend>
+      <div class="seg" id="set-weather" role="group" aria-label="Weather"></div>
+      <label for="set-hour">Time of day <output id="set-hour-out"></output></label>
+      <input type="range" id="set-hour" min="0" max="23.5" step="0.5">
+      <label class="check"><input type="checkbox" id="set-now"> Use the time now (Alberta time)</label>
+      <p class="muted">Mid-October, at this forest's latitude (56&deg; N, a made-up spot in northern Alberta). The sun, the light, the haze and the wind follow these. At night the flying camera sees little; the thermal camera still works.</p>
+    </fieldset>
+    <div class="start-buttons"><button type="button" id="settings-done" class="primary">Done</button></div>
+  </div>
+</section>
+
+<section id="pause" hidden aria-labelledby="pause-title">
+  <div class="start-card pause-card">
+    <h2 id="pause-title">Paused</h2>
+    <div class="pause-buttons">
+      <button type="button" id="pause-resume" class="primary">Resume</button>
+      <button type="button" id="pause-restart">Restart</button>
+      <button type="button" id="pause-settings">Settings</button>
+      <button type="button" id="pause-controls">Controls</button>
+      <button type="button" id="pause-quit">Quit to menu</button>
+    </div>
+    <p class="muted" id="pause-packs"></p>
+    <div class="pause-more" id="pause-more" aria-label="More"></div>
+  </div>
+</section>
+
+
+<section id="overlay" hidden aria-labelledby="ov-title">
+  <div class="start-card">
+    <h2 id="ov-title"></h2>
+    <p id="ov-text"></p>
+    <ul id="ov-stats" class="ov-stats"></ul>
+    <div class="start-buttons">
+      <button type="button" id="ov-restart" class="primary">Fly again</button>
+      <button type="button" id="ov-close">Keep looking around</button>
+    </div>
+  </div>
+</section>
+
+<section id="drive" hidden aria-labelledby="drive-title">
+  <div class="start-card">
+    <h2 id="drive-title">Drive closer first?</h2>
+    <p id="drive-tip"></p>
+    <canvas id="drive-map" class="drive-map" width="300" height="300" aria-label="Map centred on you: the lookout's reported area shaded, the launch spots as lettered pins with their drive times. Tap a pin or a button to choose."></canvas>
+    <p class="muted" id="drive-near">Every spot is within about 1 km of the reported smoke.</p>
+    <div id="drive-choices" class="drive-choices"></div>
+    <p class="muted" id="drive-note">The fire keeps growing while you drive: the game clock moves on by the drive time.</p>
+  </div>
+</section>
+
+
+<section id="howreal" hidden aria-labelledby="howreal-title">
+  <div class="howreal-card">
+    <button type="button" id="howreal-close" class="close" aria-label="Close">&times;</button>
+    <h2 id="howreal-title">How real is this?</h2>
+    <p>Every number the simulation uses, where it comes from, and what is still an assumption. Rows marked ASSUMPTION are not measured or sourced yet.</p>
+    <div id="howreal-body"></div>
+  </div>
+</section>
+
+<section id="radio-setup" hidden aria-labelledby="radio-title">
+  <div class="howreal-card radio-card">
+    <button type="button" id="radio-close" class="close" aria-label="Close">&times;</button>
+    <h2 id="radio-title">Set up your radio</h2>
+    <div id="radio-body"></div>
+    <div class="start-buttons">
+      <button type="button" id="radio-next" class="primary" hidden>Next</button>
+      <button type="button" id="radio-skip" hidden>Skip</button>
+    </div>
+  </div>
+</section>
+
+<script type="module" src="game.js"></script>
+</body>
+</html>

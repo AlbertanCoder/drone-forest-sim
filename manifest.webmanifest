@@ -1,0 +1,10 @@
+{
+ "name": "Find the fire: drone training simulation",
+ "short_name": "Find the fire",
+ "start_url": "./",
+ "scope": "./",
+ "display": "fullscreen",
+ "orientation": "landscape",
+ "background_color": "#16241d",
+ "theme_color": "#16241d"
+}
