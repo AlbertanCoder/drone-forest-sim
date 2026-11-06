@@ -35,6 +35,21 @@
     <p><span id="tut-step"></span> <span id="tut-text"></span></p>
     <button type="button" id="tut-skip">Skip tutorial</button>
   </div>
+    <section id="checklist" hidden aria-labelledby="cl-title">
+    <button type="button" id="cl-close" class="close" aria-label="Close">&times;</button>
+    <h2 id="cl-title">Pre-flight checklist <span class="muted" id="cl-count"></span></h2>
+    <div id="cl-items" class="cl-items"></div>
+    <p class="muted">Tap each one once it's checked. Arming closes this; the debrief and the logbook say if it was done.</p>
+  </section>
+    <section id="report-form" hidden aria-labelledby="rf-title">
+    <h2 id="rf-title"></h2>
+    <p class="rf-warn" id="rf-warn" hidden></p>
+    <p class="muted" id="rf-intro"></p>
+    <p class="rf-gps"><span id="rf-gps-label"></span>: <b id="rf-gps"></b></p>
+    <div id="rf-questions"></div>
+    <p class="muted" id="rf-skipped"></p>
+    <div class="start-buttons rf-actions"><button type="button" id="rf-cancel">Cancel</button><button type="button" id="rf-send" class="primary">Send report<span class="long"> (R)</span></button></div>
+  </section>
   <aside id="legend" hidden aria-labelledby="legend-title">
     <button type="button" id="legend-close" class="close" aria-label="Hide the controls">&times;</button>
     <h2 id="legend-title">Controls</h2>
@@ -64,6 +79,7 @@
     <button type="button" id="btn-radio-2">Set up radio</button>
   </div>
   <p id="hud-msg" role="status" aria-live="polite"></p>
+  <p id="fps-readout" class="fps-readout" hidden></p>
     <div class="minimap" id="minimap-box" role="img" aria-label="Map, north up: you and the truck, the drone, the track flown, the lookout's sector and your reports. Tap to enlarge."><canvas id="minimap" width="150" height="150"></canvas></div>
     <div id="field-bezel" hidden aria-hidden="true"><span id="field-bezel-label">Monitor: the analogue 5.8 GHz picture, as on your M5F</span></div>
   <p id="field-rules" hidden>The guide: &ldquo;If you fly by a screen, you need a visual observer; until then, fly looking at the drone.&rdquo; Basic operations: someone must keep the drone in sight.</p>
@@ -90,7 +106,7 @@
 
 <section id="start" aria-labelledby="start-title">
   <div class="start-card">
-    <p class="kicker">Training simulation &middot; made-up forest, northern Alberta</p>
+    <p class="kicker">Training simulation &middot; made-up forest, west-central Alberta foothills</p>
     <h1 id="start-title">Find the fire</h1>
     <p class="easy-banner" id="easy-banner" hidden>Easy radio is on. Real radios lose signal through trees: turn it off in Settings for the real challenge.</p>
     <p>Fly the drone over a forest where a fire has started. Its thermal camera finds hot spots with the same code as the real payload. Your job is only to find the fire and press <b>Report hot spot</b>. Responders fly in and drop water where you reported.</p>
@@ -110,6 +126,11 @@
       <p><b>Your RadioMaster Pocket</b>: plug it in by USB, choose USB Joystick (HID) on the radio, then press Set up radio.</p>
     </details>
     </details>
+        <fieldset class="settings" id="mission-choice">
+      <legend>Mission</legend>
+      <select id="set-mission" aria-label="Mission"></select>
+      <p class="muted" id="mission-note"></p>
+    </fieldset>
     <div class="start-buttons">
       <button type="button" id="btn-start" class="primary">Play</button>
       <button type="button" id="btn-demo">Watch a demo</button>
@@ -143,6 +164,9 @@
         <label class="check"><input type="checkbox" id="rz-sag"> Battery voltage sags under load</label>
         <label class="check"><input type="checkbox" id="rz-rules"> Rules enforced: flying while the helicopter works ends the mission</label>
         <label class="check"><input type="checkbox" id="rz-failures"> Failures: the failsafe drops the drone on a lost link; crashes damage it</label>
+        <label class="check"><input type="checkbox" id="rz-autodisarm"> Auto-disarm: 3 s after landing the motors stop (a game assist; the real drone uses its arm switch)</label>
+        <label class="check"><input type="checkbox" id="rz-checklist"> Pre-flight checklist before each launch</label>
+        <label>Rare faults: a worn pack, a frozen thermal camera, a slow GPS fix <select id="rz-faults"><option value="off">Off</option><option value="rare">Rare</option><option value="real">Real rate (a guess)</option></select></label>
       </details>
       <p class="muted">A real 2.4 GHz radio loses signal through trees, most when the drone is low and far away. The bars warn first: climb, or land and drive closer.</p>
     </fieldset>
@@ -163,17 +187,40 @@
       <label class="check"><input type="checkbox" id="set-sound" checked> Sound on</label>
       <label for="set-volume">Volume <output id="set-volume-out"></output></label>
       <input type="range" id="set-volume" min="0" max="100" step="5">
+      <label for="set-ambient">Forest sounds <output id="set-ambient-out"></output></label>
+      <input type="range" id="set-ambient" min="0" max="100" step="5">
       <p class="muted">The motors, the wind, the fire and the radio's warnings. Nothing plays until you press Play.</p>
+    </fieldset>
+    <fieldset class="settings" id="screen-choice">
+      <legend>Screen</legend>
+      <label>Quality <select id="set-quality"><option value="auto">Auto (by the frame rate)</option><option value="low">Low</option><option value="mid">Medium</option><option value="high">High</option></select></label>
+      <label class="check"><input type="checkbox" id="set-fps"> Show the frame rate</label>
+      <p class="muted">Auto picks the quality from the frame rate in the first seconds of flying. Low draws fewer pixels and no shadows: try it if your phone stutters.</p>
     </fieldset>
     <fieldset class="settings" id="world-choice">
       <legend>Weather and time of day</legend>
       <div class="seg" id="set-weather" role="group" aria-label="Weather"></div>
+      <label for="set-date">Date <input type="date" id="set-date"></label>
       <label for="set-hour">Time of day <output id="set-hour-out"></output></label>
       <input type="range" id="set-hour" min="0" max="23.5" step="0.5">
       <label class="check"><input type="checkbox" id="set-now"> Use the time now (Alberta time)</label>
-      <p class="muted">Mid-October, at this forest's latitude (56&deg; N, a made-up spot in northern Alberta). The sun, the light, the haze and the wind follow these. At night the flying camera sees little; the thermal camera still works.</p>
+      <p class="muted"><span id="set-date-text">Mid-October</span>, at this forest's latitude (<span id="set-lat">53.9&deg; N</span>, a made-up spot in the west-central Alberta foothills). The sun, the light, the haze and the wind follow these, and the forest's season follows the month (spring April to May, summer June to August, autumn September to October, winter November to March: a game choice). At night the flying camera sees little; the thermal camera still works.</p>
     </fieldset>
     <div class="start-buttons"><button type="button" id="settings-done" class="primary">Done</button></div>
+  </div>
+</section>
+
+<section id="logbook" hidden aria-labelledby="logbook-title">
+  <div class="start-card">
+    <button type="button" id="logbook-close" class="close" aria-label="Close">&times;</button>
+    <h2 id="logbook-title">Logbook</h2>
+    <p class="muted" id="logbook-totals"></p>
+    <ul class="logbook-list" id="logbook-list"></ul>
+    <div class="start-buttons"><button type="button" id="logbook-clear">Clear</button><button type="button" id="logbook-done" class="primary">Done</button></div>
+    <div class="logbook-confirm" id="logbook-confirm" hidden>
+      <p id="logbook-confirm-text"></p>
+      <div class="start-buttons"><button type="button" id="logbook-clear-yes">Clear them</button><button type="button" id="logbook-clear-no" class="primary">Keep them</button></div>
+    </div>
   </div>
 </section>
 
@@ -185,6 +232,7 @@
       <button type="button" id="pause-restart">Restart</button>
       <button type="button" id="pause-settings">Settings</button>
       <button type="button" id="pause-controls">Controls</button>
+      <button type="button" id="pause-logbook">Logbook</button>
       <button type="button" id="pause-quit">Quit to menu</button>
     </div>
     <p class="muted" id="pause-packs"></p>
@@ -198,6 +246,11 @@
     <h2 id="ov-title"></h2>
     <p id="ov-text"></p>
     <ul id="ov-stats" class="ov-stats"></ul>
+        <div id="ov-debrief" hidden>
+      <canvas id="ov-map" class="ov-map" width="300" height="300" aria-label="Map of the mission: your flight, where you stood, your reports and the fire"></canvas>
+      <p class="muted ov-legend" id="ov-legend"></p>
+      <ul class="ov-tips" id="ov-tips"></ul>
+    </div>
     <div class="start-buttons">
       <button type="button" id="ov-restart" class="primary">Fly again</button>
       <button type="button" id="ov-close">Keep looking around</button>

@@ -1,15 +1,15 @@
 {
- "builtFrom": "3afd16dac7387fcad8da483dd0a7adf5e6fcd3e5",
+ "builtFrom": "e815a2b21c99eab1f2da48a0eb54375fce919d61",
  "builtIn": "a fresh git worktree of that commit",
  "trackedChanges": 0,
- "at": "2026-11-06T05:12:44.510Z",
+ "at": "2026-11-06T15:14:02.780Z",
  "files": {
   "assets/drone-game.glb": "16df37db65da83f1796b33261eb6cdfda91729d411cc4c19a6b0f47449b745a0",
-  "game.js": "f7690ab86cbec56e0e1381d7925065d45798f888a1237ed3f4ae9bb2d81e21d5",
-  "index.html": "f134678a0311a45aa5af3c2a030274694b89005f83f0a925714fe2aab3671f60",
+  "game.js": "96a23a59c0cfbbfbb752fe2c13216ef81f37aa615adf91e7238549069f8dfe4c",
+  "index.html": "209535e9658a0d8fd4c2c6c12b0c71654924e461c89d702ca16bcac413263f1e",
   "manifest.webmanifest": "9f62b140657784af5fb13d0aafb2a96f26086db4cb964bac8d5a7ca2438fce7f",
   "README.md": "1af7d305d9731636f41d3e54eaf683c78c7ceb89a1862d3dde48ff130bf5418e",
-  "style.css": "07e41d2f30e7ea920701a2a9ddac1e4f19a66269d13541547c19aaa0306470ba",
+  "style.css": "897564bd44c6e5994aa68d3b0a5bb255753e109bc244e3ee8d88afc6817ed703",
   "THREE-JS-LICENSE.txt": "5d5dad8147523d59bc15cca838ae0bdaae7075230ec49132c551a1d18e7b3412"
  }
 }
