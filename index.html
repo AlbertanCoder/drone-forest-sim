@@ -291,6 +291,37 @@
   </div>
 </section>
 
+<script>
+(function () {
+  var shown = false;
+  function box() {
+    var b = document.getElementById("boot-msg");
+    if (!b) {
+      b = document.createElement("p"); b.id = "boot-msg"; b.setAttribute("role", "alert");
+      b.style.cssText = "background:#7a1c12;color:#fff;padding:10px 12px;border-radius:8px;margin:10px 0;font-size:15px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere";
+      var row = document.querySelector("#start .start-buttons");
+      if (row && row.parentNode) row.parentNode.insertBefore(b, row); else document.body.insertBefore(b, document.body.firstChild);
+    }
+    return b;
+  }
+  function say(t) { box().textContent = t; }
+  function fail(m) {
+    if (window.__game || shown) return;
+    shown = true;
+    say("The game could not start on this device. Please send this message to the developer:\n" + m + "\n" + navigator.userAgent);
+  }
+  window.addEventListener("error", function (e) { fail((e.message || "error") + (e.filename ? " (" + e.filename.split("/").pop() + ":" + e.lineno + ":" + e.colno + ")" : "")); });
+  window.addEventListener("unhandledrejection", function (e) { var r = e.reason; fail("promise: " + (r && (r.stack || r.message) || r)); });
+  document.addEventListener("click", function (e) {
+    var t = e.target && e.target.closest && e.target.closest("#btn-start, #btn-demo");
+    if (t && !window.__game && !shown) {
+      say("Still loading the forest. Wait a few seconds, then tap again.");
+      var w = setInterval(function () { if (window.__game) { clearInterval(w); var b = document.getElementById("boot-msg"); if (b && !shown) b.remove(); } }, 500);
+    }
+  }, true);
+  setTimeout(function () { if (!window.__game) fail("still not started after 30 seconds"); }, 30000);
+})();
+</script>
 <script type="module" src="game.js"></script>
 </body>
 </html>

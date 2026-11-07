@@ -1,12 +1,12 @@
 {
- "builtFrom": "edb545f2b250023aa323e4aae9c960e30e5d6c40",
+ "builtFrom": "00fe02c5948919b20674651c048678b2ae95535d",
  "builtIn": "a fresh git worktree of that commit",
  "trackedChanges": 0,
- "at": "2026-11-07T04:49:19.573Z",
+ "at": "2026-11-07T12:03:58.610Z",
  "files": {
   "assets/drone-game.glb": "16df37db65da83f1796b33261eb6cdfda91729d411cc4c19a6b0f47449b745a0",
   "game.js": "96a23a59c0cfbbfbb752fe2c13216ef81f37aa615adf91e7238549069f8dfe4c",
-  "index.html": "209535e9658a0d8fd4c2c6c12b0c71654924e461c89d702ca16bcac413263f1e",
+  "index.html": "feb4d105f02d8856a53cf432f166bc0782546fa34a9dc5521fb0a7cb2dcb95d2",
   "manifest.webmanifest": "9f62b140657784af5fb13d0aafb2a96f26086db4cb964bac8d5a7ca2438fce7f",
   "README.md": "d8cd5b790e78070b5423b5e4aaece7eb2811d2c60529428b9bd3007d839c1500",
   "style.css": "897564bd44c6e5994aa68d3b0a5bb255753e109bc244e3ee8d88afc6817ed703",
