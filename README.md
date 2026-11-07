@@ -1,5 +1,7 @@
 # Find the fire: drone training simulation
 
+**Play it here (iPhone, Android, tablet or computer): https://albertancoder.github.io/drone-forest-sim/**
+
 A training simulation in your browser: fly a small drone with a thermal camera over a made-up forest, find a fire
 (from a smouldering spot to a big plume) and report it. Then land and stay landed while the helicopter works.
 
